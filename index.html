@@ -101,7 +101,7 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
 .sec h2{font:400 34px/40px var(--serif);margin-bottom:16px}
 @media (min-width:900px){.sec h2{font-size:52px;line-height:56px}}
 .sec p{max-width:52ch;opacity:.86}
-.foot{border-top:1px solid var(--line);padding:28px var(--pad) 40px;font-size:13px;line-height:20px;color:var(--grey)}
+.foot{border-top:1px solid var(--line);padding:28px var(--pad) 40px;font-size:13px;line-height:20px;color:#fff;text-shadow:0 1px 10px rgba(20,17,15,.6)}
 .foot a{text-underline-offset:3px}
 
 /* Stat strip: three numbers, big figure, small label. Sample until a real agent's numbers replace them. */
@@ -120,22 +120,24 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
 .form input,.form select{font:400 17px/24px var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-height:52px;width:100%;-webkit-appearance:none;appearance:none}
 .form select{background-image:linear-gradient(45deg,transparent 50%,var(--grey) 50%),linear-gradient(135deg,var(--grey) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat}
 .form .btn{width:100%;border:0;cursor:pointer;margin-top:4px}
-.form .note{font-size:13px;line-height:20px;color:var(--grey)}
+.form .note{font-size:13px;line-height:20px;color:#fff;text-shadow:0 1px 10px rgba(20,17,15,.6)}
 .done{padding:24px;border:1px solid var(--line);border-radius:var(--r);background:#fff}
 .done h3{font:400 28px/34px var(--serif);margin-bottom:8px}
 
-/* Room clips between sections: plays once when it scrolls into view, holds the last frame */
-.reel{max-width:1040px;margin:0 auto;padding:0 var(--pad)}
-.reel figure{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;background:#d9d5cb}
-.reel video{width:100%;height:100%;object-fit:cover;display:block}
-.reel figcaption{font-size:13px;line-height:20px;color:var(--grey);margin-top:10px}
-@media (max-width:899px){.reel figure{aspect-ratio:4/3}}
+/* Room scenes: full screen, pinned while the scroll moves the film, fade in and out */
+.scene{position:relative;height:260vh;height:260svh}
+.scene .pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity}
+.scene .lbl{position:absolute;left:var(--pad);bottom:calc(16px + env(safe-area-inset-bottom));font-size:13px;line-height:20px;color:#fff;text-shadow:0 1px 10px rgba(20,17,15,.6)}
 
 /* Reduced motion: no pin, no scrub, first frame only */
 @media (prefers-reduced-motion:reduce){
   .hero{height:auto}
   .stage{position:relative}
   .room-scrim,.caption{display:none}
+  .scene{height:auto}
+  .scene .pin{position:relative;height:auto;aspect-ratio:16/9}
+  .scene video{opacity:1}
 }
 </style>
 </head>
@@ -204,10 +206,12 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
     </ul>
   </section>
 
-  <div class="reel">
-    <figure><video src="web/walkthrough/03-hallway.mp4" poster="web/walkthrough/03-hallway-poster.jpg" muted playsinline preload="none" aria-label="Walkthrough: down the hallway to the bedroom"></video></figure>
-    <figcaption>Sample walkthrough, AI-made from stock photos.</figcaption>
-  </div>
+  <section class="scene" aria-label="Walkthrough: down the hallway to the bedroom">
+    <div class="pin">
+      <video src="web/walkthrough/03-hallway.mp4" poster="web/walkthrough/03-hallway-poster.jpg" muted playsinline preload="none"></video>
+      <p class="lbl">Sample walkthrough, AI-made from stock photos.</p>
+    </div>
+  </section>
 
   <section class="sec sell" id="sell" aria-labelledby="sell-h">
     <div>
@@ -233,10 +237,12 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
     </form>
   </section>
 
-  <div class="reel">
-    <figure><video src="web/walkthrough/05-backyard.mp4" poster="web/walkthrough/05-backyard-poster.jpg" muted playsinline preload="none" aria-label="Walkthrough: the backyard pergola at golden hour"></video></figure>
-    <figcaption>Sample walkthrough, AI-made from stock photos.</figcaption>
-  </div>
+  <section class="scene" aria-label="Walkthrough: the backyard pergola at golden hour">
+    <div class="pin">
+      <video src="web/walkthrough/05-backyard.mp4" poster="web/walkthrough/05-backyard-poster.jpg" muted playsinline preload="none"></video>
+      <p class="lbl">Sample walkthrough, AI-made from stock photos.</p>
+    </div>
+  </section>
 
   <section class="sec" id="fees">
     <h2>Fees, in plain English.</h2>
@@ -268,56 +274,54 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) return;
 
-  // Room clips: load when close, play once in view, hold the last frame
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        var v = e.target;
-        if (e.isIntersecting) {
-          v.preload = 'auto';
-          if (e.intersectionRatio >= .5 && !v.dataset.played) { v.dataset.played = 1; var pr = v.play(); if (pr) pr.catch(function(){ delete v.dataset.played; }); }
-        }
-      });
-    }, {rootMargin:'300px 0px', threshold:[0, .5]});
-    document.querySelectorAll('.reel video').forEach(function(v){ io.observe(v); });
+  function seg(p, a, b){ return Math.min(1, Math.max(0, (p - a) / (b - a))); }
+  function ease(t){ return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
+
+  // Scroll-scrubbed video. iOS only paints a seeked frame after the video has played once.
+  function scrubber(v){
+    var target = 0, primed = false;
+    function seek(){
+      if (!v.duration || v.seeking) return;
+      var t = Math.min(target, v.duration - .05);
+      if (Math.abs(v.currentTime - t) > .03) v.currentTime = t;
+    }
+    function prime(){ if (primed) return; primed = true; var pr = v.play(); if (pr) pr.then(function(){ v.pause(); seek(); }).catch(function(){}); }
+    v.addEventListener('seeked', seek);
+    return {
+      to: function(f){ target = f * (v.duration || 0); seek(); },
+      wake: function(){ if (v.preload !== 'auto') v.preload = 'auto'; if (v.readyState >= 1) prime(); else v.addEventListener('loadedmetadata', prime, {once:true}); }
+    };
   }
 
   var hero = document.getElementById('hero');
-  var film = hero.querySelector('.film');
-  var target = 0;
+  var film = scrubber(hero.querySelector('.film'));
+  film.wake();
   var scrim = hero.querySelector('.room-scrim');
   var portrait = hero.querySelector('.portrait');
   var card = hero.querySelector('.card');
   var caption = hero.querySelector('.caption');
   var ticking = false;
 
-  function seg(p, a, b){ return Math.min(1, Math.max(0, (p - a) / (b - a))); }
-  function ease(t){ return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
-
-  // iOS only paints a seeked frame after the video has been played once
-  function prime(){ var pr = film.play(); if (pr) pr.then(function(){ film.pause(); seek(); }).catch(function(){}); }
-  if (film.readyState >= 1) prime(); else film.addEventListener('loadedmetadata', prime);
-  film.addEventListener('seeked', seek);
-  function seek(){
-    if (!film.duration || film.seeking) return;
-    var t = Math.min(target, film.duration - .05);
-    if (Math.abs(film.currentTime - t) > .03) film.currentTime = t;
-  }
+  // Room scenes: fade in, the film moves with the scroll, fade out into the next section
+  var scenes = [].map.call(document.querySelectorAll('.scene'), function(el){
+    return {el: el, v: el.querySelector('video'), s: scrubber(el.querySelector('video'))};
+  });
 
   function update(){
     ticking = false;
-    var total = hero.offsetHeight - window.innerHeight;
+    var vh = window.innerHeight;
+    var total = hero.offsetHeight - vh;
     var p = Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / total));
 
     // The film runs across the scroll: garden, open door, living room
-    target = seg(p, .02, .9) * (film.duration || 0);
-    seek();
+    film.to(seg(p, .02, .9));
 
-    var pf = ease(seg(p, .1, .42));
+    // Face and card start fading on the first bit of scroll
+    var pf = ease(seg(p, 0, .16));
     portrait.style.opacity = (1 - pf).toFixed(3);
     portrait.style.transform = 'translate3d(0,' + (-pf * 7).toFixed(2) + 'svh,0) scale(' + (1 - pf * .18).toFixed(4) + ')';
 
-    var cf = seg(p, .26, .42);
+    var cf = ease(seg(p, 0, .14));
     card.style.opacity = (1 - cf).toFixed(3);
     card.style.transform = 'translate3d(0,' + (cf * 28).toFixed(1) + 'px,0)';
     card.style.pointerEvents = cf > .8 ? 'none' : 'auto';
@@ -327,6 +331,16 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
     var cp = seg(p, .84, .97);
     caption.style.opacity = cp.toFixed(3);
     caption.style.transform = 'translate3d(0,' + ((1 - cp) * 14).toFixed(1) + 'px,0)';
+
+    scenes.forEach(function(sc){
+      var r = sc.el.getBoundingClientRect();
+      if (r.top > vh * 2 || r.bottom < -vh) return;
+      sc.s.wake();
+      // 0 when the scene's top reaches the bottom of the screen, 1 when its end leaves the top
+      var q = (vh - r.top) / (r.height + vh);
+      sc.v.style.opacity = Math.min(seg(q, .08, .3), 1 - seg(q, .7, .92)).toFixed(3);
+      sc.s.to(seg(q, .26, .74));
+    });
   }
 
   function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
