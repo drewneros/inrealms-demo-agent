@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marlowe Property | Concept demo</title>
+<meta name="description" content="Concept demo by InRealms: a Sydney real estate agent website with a scroll hero. Placeholder agent, stock photos.">
+<meta name="robots" content="noindex">
+<link rel="preload" href="fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Instrument Serif";src:url("fonts/InstrumentSerif-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+
+:root{
+  /* Spec locked 9 Oct 2026. One radius, one accent. */
+  --bg:#F4F1EA;
+  --ink:#14110F;
+  --grey:#6F6A62;
+  --line:rgba(20,17,15,.12);
+  --accent:#1F3D36;
+  --r:2px;
+  --pad:20px;
+  --bar:56px;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (min-width:900px){:root{--pad:64px}}
+
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:400 17px/28px var(--sans);-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Top bar: phone is always one tap away */
+.bar{position:fixed;inset:0 0 auto 0;height:var(--bar);z-index:20;display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--pad);background:rgba(244,241,234,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.mark{font:400 22px/1 var(--serif);text-decoration:none;display:flex;flex-direction:column;gap:3px}
+.mark small{font:500 10px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--grey)}
+.call{font:500 15px/1 var(--sans);text-decoration:none;padding:12px 0 12px 12px;letter-spacing:.01em;white-space:nowrap}
+.call span{color:var(--grey);margin-right:8px;font-weight:400}
+@media (max-width:420px){.call span{display:none}}
+
+/* Hero: tall track, pinned stage, scroll drives three moves */
+.hero{position:relative;height:420vh;height:420svh}
+.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--bg)}
+.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform,opacity}
+/* Entry walkthrough: scroll moves the film from the garden, through the open door, into the living room */
+.film{object-position:50% 50%;background:#1d1a17}
+.dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,17,15,.10),rgba(20,17,15,0) 40%);pointer-events:none}
+
+.portrait{position:absolute;right:var(--pad);top:calc(var(--bar) + 16px);width:min(44vw,190px);aspect-ratio:2/3;
+  border-radius:var(--r);overflow:hidden;box-shadow:0 18px 50px rgba(20,17,15,.28);will-change:transform,opacity}
+.portrait img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+
+.card{position:absolute;left:0;right:0;bottom:0;background:var(--bg);padding:26px var(--pad) calc(22px + env(safe-area-inset-bottom));
+  border-radius:0;will-change:transform,opacity}
+/* Phone/tablet: the film fades into the card, no hard top edge */
+.card::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:120px;background:linear-gradient(180deg,rgba(244,241,234,0),var(--bg));pointer-events:none}
+.eyebrow{font:500 12px/16px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--grey);margin-bottom:12px}
+h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-width:16ch}
+.sub{color:var(--ink);opacity:.82;margin-bottom:22px;max-width:44ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:var(--bg);text-decoration:none;
+  font:500 16px/1 var(--sans);letter-spacing:.01em;padding:18px 28px;border-radius:var(--r);min-height:52px;width:100%}
+.btn:active{transform:translateY(1px)}
+.trust{margin-top:16px;font-size:14px;line-height:22px;color:var(--grey)}
+.trust a{color:var(--ink);text-underline-offset:3px}
+
+.caption{position:absolute;left:var(--pad);right:var(--pad);bottom:12svh;color:var(--bg);opacity:0;will-change:transform,opacity}
+.caption p{font:400 44px/48px var(--serif);max-width:12ch;text-shadow:0 2px 24px rgba(20,17,15,.45)}
+.room-scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(20,17,15,.55),rgba(20,17,15,0) 55%);opacity:0;pointer-events:none}
+
+@media (min-width:900px){
+  h1{font-size:68px;line-height:72px;max-width:14ch}
+  .portrait{left:auto;right:12vw;top:calc(var(--bar) + 9svh);width:min(26vw,380px)}
+  .card{left:var(--pad);right:auto;bottom:var(--pad);width:min(560px,46vw);border-radius:var(--r);padding:36px}
+  .card::before{display:none}
+  .btn{width:auto}
+  .caption p{font-size:84px;line-height:88px;max-width:11ch}
+}
+
+
+/* Listings: one image, three facts, one link. Sample content, always labelled. */
+.list{padding-top:0}
+.list .eyebrow{margin-bottom:10px}
+.cards{list-style:none;padding:0;margin:36px 0 0;display:grid;gap:40px}
+@media (min-width:900px){.cards{grid-template-columns:repeat(3,1fr);gap:32px;margin-top:56px}}
+.card-l{display:block}
+.card-l figure{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:4/3;background:#d9d5cb}
+.card-l img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.23,1,.32,1)}
+@media (hover:hover){.card-l:hover img{transform:scale(1.035)}}
+.tag{position:absolute;left:12px;top:12px;background:var(--bg);color:var(--ink);font:500 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:7px 9px;border-radius:var(--r)}
+.card-l h3{font:400 24px/30px var(--serif);margin:16px 0 4px}
+.facts{font-size:14px;line-height:22px;color:var(--grey);margin-bottom:10px}
+.card-l a{font:500 15px/1 var(--sans);text-underline-offset:4px;display:inline-block;padding:8px 0}
+@media (prefers-reduced-motion:reduce){.card-l img{transition:none}}
+
+/* Next section so the fees link is real */
+.sec{padding:72px var(--pad) 96px;max-width:1040px;margin:0 auto}
+@media (min-width:900px){.sec{padding:120px var(--pad)}}
+.sec h2{font:400 34px/40px var(--serif);margin-bottom:16px}
+@media (min-width:900px){.sec h2{font-size:52px;line-height:56px}}
+.sec p{max-width:52ch;opacity:.86}
+.foot{border-top:1px solid var(--line);padding:28px var(--pad) 40px;font-size:13px;line-height:20px;color:var(--grey)}
+.foot a{text-underline-offset:3px}
+
+/* Stat strip: three numbers, big figure, small label. Sample until a real agent's numbers replace them. */
+.stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:40px var(--pad);max-width:1040px;margin:0 auto}
+.stats ul{list-style:none;padding:0;display:grid;gap:28px}
+@media (min-width:900px){.stats{padding:56px var(--pad)}.stats ul{grid-template-columns:repeat(3,1fr);gap:32px}}
+.stats b{display:block;font:400 56px/1 var(--serif);letter-spacing:-.01em;margin-bottom:8px}
+.stats span{font-size:14px;line-height:22px;color:var(--grey)}
+.stats .eyebrow{margin-bottom:24px}
+
+/* Sell: the vendor door. Short form, one qualifying question. */
+.sell{display:grid;gap:40px}
+@media (min-width:900px){.sell{grid-template-columns:1fr 1fr;gap:64px;align-items:start}}
+.form{display:grid;gap:16px}
+.form label{display:grid;gap:6px;font:500 14px/20px var(--sans)}
+.form input,.form select{font:400 17px/24px var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-height:52px;width:100%;-webkit-appearance:none;appearance:none}
+.form select{background-image:linear-gradient(45deg,transparent 50%,var(--grey) 50%),linear-gradient(135deg,var(--grey) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.form .btn{width:100%;border:0;cursor:pointer;margin-top:4px}
+.form .note{font-size:13px;line-height:20px;color:var(--grey)}
+.done{padding:24px;border:1px solid var(--line);border-radius:var(--r);background:#fff}
+.done h3{font:400 28px/34px var(--serif);margin-bottom:8px}
+
+/* Room clips between sections: plays once when it scrolls into view, holds the last frame */
+.reel{max-width:1040px;margin:0 auto;padding:0 var(--pad)}
+.reel figure{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;background:#d9d5cb}
+.reel video{width:100%;height:100%;object-fit:cover;display:block}
+.reel figcaption{font-size:13px;line-height:20px;color:var(--grey);margin-top:10px}
+@media (max-width:899px){.reel figure{aspect-ratio:4/3}}
+
+/* Reduced motion: no pin, no scrub, first frame only */
+@media (prefers-reduced-motion:reduce){
+  .hero{height:auto}
+  .stage{position:relative}
+  .room-scrim,.caption{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="mark" href="#top" aria-label="Marlowe Property, concept demo">Marlowe Property<small>Concept demo</small></a>
+  <a class="call" href="tel:0400000000"><span>Call</span>0400 000 000</a>
+</header>
+
+<main id="top">
+  <section class="hero" id="hero" aria-label="Introduction">
+    <div class="stage">
+      <video class="layer film" src="web/walkthrough/01-entry.mp4" poster="web/walkthrough/01-entry-poster.jpg" muted playsinline preload="auto" aria-label="Walkthrough: from the garden, through the open door, into the living room. AI-made film from stock photos"></video>
+      <div class="dim"></div>
+      <div class="room-scrim"></div>
+
+      <figure class="portrait">
+        <img src="web/agent.jpg" alt="Alex Marlowe, placeholder agent, stock photo" decoding="async">
+      </figure>
+
+      <div class="card">
+        <p class="eyebrow">Bronte, NSW</p>
+        <h1>Your home, sold by someone who answers the phone.</h1>
+        <p class="sub">I'm Alex Marlowe. I sell homes around Bronte. Ring me and I'll give you a straight view on what yours could fetch.</p>
+        <a class="btn" href="#sell">Book a free appraisal</a>
+        <p class="trust">Alex Marlowe, Bronte NSW. <a href="#fees">Fees explained upfront</a>. <a href="mailto:alex@example.com">alex@example.com</a></p>
+      </div>
+
+      <div class="caption"><p>Let's walk through yours.</p></div>
+    </div>
+  </section>
+
+  <section class="stats" aria-label="Track record, sample figures">
+    <p class="eyebrow">Sample figures, the agent's real numbers go here</p>
+    <ul>
+      <li><b>38</b><span>Homes sold around Bronte, last 12 months</span></li>
+      <li><b>21</b><span>Median days on market</span></li>
+      <li><b>1 hr</b><span>Callback on every enquiry</span></li>
+    </ul>
+  </section>
+
+  <section class="sec list" id="homes" aria-labelledby="homes-h">
+    <p class="eyebrow">Sample listings</p>
+    <h2 id="homes-h">A few homes I'm working with.</h2>
+    <p>Price guides on request. Ring or email and I'll send the details.</p>
+    <ul class="cards">
+      <li class="card-l">
+        <figure><img src="web/list-1.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern white home under a clear blue sky, stock photo"><span class="tag">Sample</span></figure>
+        <h3>Bronte</h3>
+        <p class="facts">Light, white and easy to live in. 4 bed, 3 bath, 2 car.</p>
+        <a href="mailto:alex@example.com?subject=Bronte%20home">Ask about this home</a>
+      </li>
+      <li class="card-l">
+        <figure><img src="web/list-2.jpg" width="1000" height="667" loading="lazy" decoding="async" alt="Black-clad modern home beside a traditional house, stock photo"><span class="tag">Sample</span></figure>
+        <h3>Clovelly</h3>
+        <p class="facts">A sharp, low-maintenance home with a private courtyard. 3 bed, 2 bath, 1 car.</p>
+        <a href="mailto:alex@example.com?subject=Clovelly%20home">Ask about this home</a>
+      </li>
+      <li class="card-l">
+        <figure><img src="web/list-3.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern home with a wide lawn out the front, stock photo"><span class="tag">Sample</span></figure>
+        <h3>Waverley</h3>
+        <p class="facts">A wide frontage and a proper lawn for the kids. 4 bed, 2 bath, 2 car.</p>
+        <a href="mailto:alex@example.com?subject=Waverley%20home">Ask about this home</a>
+      </li>
+    </ul>
+  </section>
+
+  <div class="reel">
+    <figure><video src="web/walkthrough/03-hallway.mp4" poster="web/walkthrough/03-hallway-poster.jpg" muted playsinline preload="none" aria-label="Walkthrough: down the hallway to the bedroom"></video></figure>
+    <figcaption>Sample walkthrough, AI-made from stock photos.</figcaption>
+  </div>
+
+  <section class="sec sell" id="sell" aria-labelledby="sell-h">
+    <div>
+      <p class="eyebrow">Thinking of selling?</p>
+      <h2 id="sell-h">Find out what your home could fetch.</h2>
+      <p>Tell me where it is and roughly when. I'll ring you back within the hour with a straight view, no obligation and no pressure to list.</p>
+    </div>
+    <form class="form" id="appraisal" novalidate>
+      <label>Your name<input name="name" autocomplete="name" required></label>
+      <label>Phone<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required></label>
+      <label>Property address<input name="address" autocomplete="street-address" required></label>
+      <label>When are you thinking of selling?
+        <select name="when" required>
+          <option value="">Choose one</option>
+          <option>Just curious for now</option>
+          <option>In the next 3 months</option>
+          <option>In 3 to 6 months</option>
+          <option>Later than 6 months</option>
+        </select>
+      </label>
+      <button class="btn" type="submit">Get my free appraisal</button>
+      <p class="note">Concept demo: nothing is sent.</p>
+    </form>
+  </section>
+
+  <div class="reel">
+    <figure><video src="web/walkthrough/05-backyard.mp4" poster="web/walkthrough/05-backyard-poster.jpg" muted playsinline preload="none" aria-label="Walkthrough: the backyard pergola at golden hour"></video></figure>
+    <figcaption>Sample walkthrough, AI-made from stock photos.</figcaption>
+  </div>
+
+  <section class="sec" id="fees">
+    <h2>Fees, in plain English.</h2>
+    <p>Before you sign anything, you get my fee and every marketing cost in writing, line by line. If a number changes, I ring you first.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  Concept demo by <a href="https://inrealms.com">InRealms</a>. Placeholder agent, invented name, stock photos from Unsplash. Not a real business.
+</footer>
+
+<script>
+// Appraisal form: demo only, shows the instant reply a real install would send
+(function(){
+  var f = document.getElementById('appraisal');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (!f.checkValidity()) { f.reportValidity(); return; }
+    var name = f.elements.name.value.trim().split(' ')[0];
+    var box = document.createElement('div');
+    box.className = 'done'; box.setAttribute('role', 'status');
+    box.innerHTML = '<h3></h3><p>Alex will ring you within the hour. A confirmation text is on its way.</p><p class="note">Concept demo: nothing was sent.</p>';
+    box.querySelector('h3').textContent = 'Thanks, ' + name + '.';
+    f.replaceWith(box);
+  });
+})();
+
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+
+  // Room clips: load when close, play once in view, hold the last frame
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        var v = e.target;
+        if (e.isIntersecting) {
+          v.preload = 'auto';
+          if (e.intersectionRatio >= .5 && !v.dataset.played) { v.dataset.played = 1; var pr = v.play(); if (pr) pr.catch(function(){ delete v.dataset.played; }); }
+        }
+      });
+    }, {rootMargin:'300px 0px', threshold:[0, .5]});
+    document.querySelectorAll('.reel video').forEach(function(v){ io.observe(v); });
+  }
+
+  var hero = document.getElementById('hero');
+  var film = hero.querySelector('.film');
+  var target = 0;
+  var scrim = hero.querySelector('.room-scrim');
+  var portrait = hero.querySelector('.portrait');
+  var card = hero.querySelector('.card');
+  var caption = hero.querySelector('.caption');
+  var ticking = false;
+
+  function seg(p, a, b){ return Math.min(1, Math.max(0, (p - a) / (b - a))); }
+  function ease(t){ return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
+
+  // iOS only paints a seeked frame after the video has been played once
+  function prime(){ var pr = film.play(); if (pr) pr.then(function(){ film.pause(); seek(); }).catch(function(){}); }
+  if (film.readyState >= 1) prime(); else film.addEventListener('loadedmetadata', prime);
+  film.addEventListener('seeked', seek);
+  function seek(){
+    if (!film.duration || film.seeking) return;
+    var t = Math.min(target, film.duration - .05);
+    if (Math.abs(film.currentTime - t) > .03) film.currentTime = t;
+  }
+
+  function update(){
+    ticking = false;
+    var total = hero.offsetHeight - window.innerHeight;
+    var p = Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / total));
+
+    // The film runs across the scroll: garden, open door, living room
+    target = seg(p, .02, .9) * (film.duration || 0);
+    seek();
+
+    var pf = ease(seg(p, .1, .42));
+    portrait.style.opacity = (1 - pf).toFixed(3);
+    portrait.style.transform = 'translate3d(0,' + (-pf * 7).toFixed(2) + 'svh,0) scale(' + (1 - pf * .18).toFixed(4) + ')';
+
+    var cf = seg(p, .26, .42);
+    card.style.opacity = (1 - cf).toFixed(3);
+    card.style.transform = 'translate3d(0,' + (cf * 28).toFixed(1) + 'px,0)';
+    card.style.pointerEvents = cf > .8 ? 'none' : 'auto';
+
+    scrim.style.opacity = seg(p, .7, .9).toFixed(3);
+
+    var cp = seg(p, .84, .97);
+    caption.style.opacity = cp.toFixed(3);
+    caption.style.transform = 'translate3d(0,' + ((1 - cp) * 14).toFixed(1) + 'px,0)';
+  }
+
+  function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  update();
+})();
+</script>
+</body>
+</html>
