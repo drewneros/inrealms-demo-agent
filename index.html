@@ -6,6 +6,7 @@
 <title>Marlowe Property | Concept demo</title>
 <meta name="description" content="Concept demo by InRealms: a Sydney real estate agent website with a scroll hero. Placeholder agent, stock photos.">
 <meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" media="print" onload="this.media='all'">
 <link rel="preload" href="fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Instrument Serif";src:url("fonts/InstrumentSerif-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
@@ -80,18 +81,22 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
 }
 
 
-/* Listings: one image, three facts, one link. Sample content, always labelled. */
+/* Listings: Serhant-style card. Full-bleed photo, status tab, facts on a dark fade. Sample content, always labelled. */
 .list{padding-top:0}
 .list .eyebrow{margin-bottom:10px}
 .cards{list-style:none;padding:0;margin:36px 0 0;display:grid;gap:40px}
 @media (min-width:900px){.cards{grid-template-columns:repeat(3,1fr);gap:32px;margin-top:56px}}
 .card-l{display:block}
-.card-l figure{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:4/3;background:#d9d5cb}
+.card-l figure{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:4/5;background:#d9d5cb}
 .card-l img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.23,1,.32,1)}
 @media (hover:hover){.card-l:hover img{transform:scale(1.035)}}
-.tag{position:absolute;left:12px;top:12px;background:var(--bg);color:var(--ink);font:500 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:7px 9px;border-radius:var(--r)}
-.card-l h3{font:400 24px/30px var(--serif);margin:16px 0 4px}
-.facts{font-size:14px;line-height:22px;color:var(--grey);margin-bottom:10px}
+.tag{position:absolute;right:12px;top:12px;background:var(--bg);color:var(--ink);font:500 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:7px 9px;border-radius:var(--r)}
+.l-status{position:absolute;left:12px;top:12px;background:var(--accent);color:var(--bg);font:500 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:7px 9px;border-radius:var(--r)}
+.l-over{position:absolute;left:0;right:0;bottom:0;padding:72px 18px 18px;color:#fff;background:linear-gradient(0deg,rgba(20,17,15,.78),rgba(20,17,15,.38) 55%,rgba(20,17,15,0))}
+.l-over h3{font:400 30px/34px var(--serif);margin:0 0 6px}
+.l-when{font-size:15px;line-height:22px;opacity:.92}
+.l-spec{font:500 11px/16px var(--sans);letter-spacing:.14em;margin-top:10px;opacity:.86}
+.facts{font-size:14px;line-height:22px;color:var(--grey);margin:14px 0 6px}
 .card-l a{font:500 15px/1 var(--sans);text-underline-offset:4px;display:inline-block;padding:8px 0}
 @media (prefers-reduced-motion:reduce){.card-l img{transition:none}}
 
@@ -123,6 +128,69 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
 .form .note{font-size:13px;line-height:20px;color:#fff;text-shadow:0 1px 10px rgba(20,17,15,.6)}
 .done{padding:24px;border:1px solid var(--line);border-radius:var(--r);background:#fff}
 .done h3{font:400 28px/34px var(--serif);margin-bottom:8px}
+
+/* Stats + globe: numbers left, a slow dotted globe right with a pin on Sydney */
+.stats-in{display:grid;gap:32px;align-items:center}
+.globe{position:relative;width:min(100%,340px);aspect-ratio:1;margin:0 auto}
+.globe svg{position:absolute}
+/* cobe draws grey; the filter maps white to --bg and dark dots to --accent */
+.globe canvas{width:100%;height:100%;display:block;opacity:0;transition:opacity .8s ease;filter:url(#globe-tint)}
+.globe canvas.on{opacity:1}
+.globe figcaption{position:absolute;left:0;right:0;bottom:-6px;text-align:center;font-size:13px;line-height:20px;color:var(--grey)}
+@media (min-width:900px){.stats-in{grid-template-columns:1.1fr 1fr;gap:48px}.stats-in ul{grid-template-columns:1fr;gap:28px}.globe{width:min(100%,420px)}}
+
+/* Suburbs: hover-expand row. Hovered or focused panel grows, the rest shrink. Phone: stack, tap to open. */
+.xrow{list-style:none;padding:0;margin:36px 0 0;display:flex;flex-direction:column;gap:10px}
+.xrow-item{position:relative;height:96px;border-radius:var(--r);overflow:hidden;background:#d9d5cb;transition:height .5s ease,flex-grow .5s ease}
+.xrow-item.is-open{height:340px}
+.xrow-btn{all:unset;box-sizing:border-box;position:absolute;inset:0;display:block;cursor:pointer;color:#fff}
+.xrow-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+.xrow-btn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.xrow-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(20,17,15,.72),rgba(20,17,15,.12) 70%)}
+.xrow-name{position:absolute;left:18px;bottom:18px;right:18px;z-index:1;font:400 30px/34px var(--serif)}
+.xrow-txt{position:absolute;left:18px;right:18px;bottom:58px;z-index:1;font-size:15px;line-height:22px;max-width:34ch;opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
+.xrow-item.is-open .xrow-txt{opacity:.94;transform:none}
+.xrow-note{margin-top:14px;font-size:13px;line-height:20px;color:var(--grey)}
+@media (min-width:900px){
+  .xrow{flex-direction:row;height:520px;gap:12px;margin-top:56px}
+  .xrow-item,.xrow-item.is-open{height:auto;flex:1 1 0;min-width:0}
+  .xrow-item.is-open{flex-grow:3}
+  .xrow-txt{min-width:260px}
+}
+@media (prefers-reduced-motion:reduce){.xrow-item,.xrow-txt{transition:none}}
+
+/* Map: the sample homes, card top-left, free OpenStreetMap tiles washed to a light grey */
+.map-box{position:relative;isolation:isolate;margin-top:36px;height:440px;border-radius:var(--r);overflow:hidden;background:#d9d5cb}
+@media (min-width:900px){.map-box{height:520px;margin-top:56px}}
+#map{position:absolute;inset:0;z-index:0}
+.map-card{position:absolute;left:12px;top:12px;z-index:500;width:min(260px,calc(100% - 24px));background:var(--bg);border-radius:var(--r);padding:16px 18px;box-shadow:0 10px 30px rgba(20,17,15,.18)}
+.map-card .eyebrow{margin-bottom:6px}
+.map-card h3{font:400 24px/28px var(--serif);margin-bottom:4px}
+.map-card p{font-size:14px;line-height:20px;color:var(--grey)}
+.map-card a{display:inline-block;margin-top:8px;padding:6px 0;font:500 15px/1 var(--sans);text-underline-offset:4px}
+.map-pin{width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(20,17,15,.35);cursor:pointer}
+.map-pin.on{transform:scale(1.35)}
+.leaflet-container{font:400 13px/1.4 var(--sans);background:#d9d5cb}
+.leaflet-tile-pane{filter:grayscale(1) contrast(.85) brightness(1.06)}
+
+/* Chat: scripted demo assistant, bottom-right */
+.chat-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border:0;border-radius:50%;background:var(--accent);color:var(--bg);cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 30px rgba(20,17,15,.28)}
+.chat-fab svg{width:24px;height:24px}
+.chat-panel{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:30;width:min(360px,calc(100vw - 32px));max-height:min(520px,calc(100vh - 160px));max-height:min(520px,calc(100svh - 160px));display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 18px 50px rgba(20,17,15,.28)}
+.chat-panel[hidden]{display:none}
+.chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.chat-head b{font:400 20px/24px var(--serif)}
+.chat-demo-label{display:block;font:500 10px/14px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--grey)}
+.chat-x{all:unset;cursor:pointer;font-size:26px;line-height:1;padding:6px 8px;color:var(--grey)}
+.chat-x:focus-visible{outline:2px solid var(--accent)}
+.chat-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-log p{font-size:15px;line-height:22px;padding:10px 12px;border-radius:var(--r);max-width:88%}
+.chat-log .bot{background:#fff;border:1px solid var(--line);align-self:flex-start}
+.chat-log .me{background:var(--accent);color:var(--bg);align-self:flex-end}
+.chat-log a{text-underline-offset:3px}
+.chat-quick{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 16px;border-top:1px solid var(--line)}
+.chat-quick button{font:500 14px/1 var(--sans);color:var(--ink);background:transparent;border:1px solid var(--accent);border-radius:var(--r);padding:11px 12px;cursor:pointer}
+.chat-quick button:hover{background:var(--accent);color:var(--bg)}
 
 /* Room scenes: full screen, pinned while the scroll moves the film, fade in and out */
 .scene{position:relative;height:260vh;height:260svh}
@@ -172,12 +240,21 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
   </section>
 
   <section class="stats" aria-label="Track record, sample figures">
-    <p class="eyebrow">Sample figures, the agent's real numbers go here</p>
-    <ul>
-      <li><b>38</b><span>Homes sold around Bronte, last 12 months</span></li>
-      <li><b>21</b><span>Median days on market</span></li>
-      <li><b>1 hr</b><span>Callback on every enquiry</span></li>
-    </ul>
+    <div class="stats-in">
+      <div>
+        <p class="eyebrow">Sample figures, the agent's real numbers go here</p>
+        <ul>
+          <li><b>38</b><span>Homes sold around Bronte, last 12 months</span></li>
+          <li><b>21</b><span>Median days on market</span></li>
+          <li><b>1 hr</b><span>Callback on every enquiry</span></li>
+        </ul>
+      </div>
+      <figure class="globe">
+        <svg width="0" height="0" aria-hidden="true" focusable="false"><filter id="globe-tint" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.835" intercept="0.122"/><feFuncG type="linear" slope="0.706" intercept="0.239"/><feFuncB type="linear" slope="0.706" intercept="0.212"/></feComponentTransfer></filter></svg>
+        <canvas id="globe" role="img" aria-label="Dotted globe turning slowly, pin on Sydney"></canvas>
+        <figcaption>Based in Sydney</figcaption>
+      </figure>
+    </div>
   </section>
 
   <section class="sec list" id="homes" aria-labelledby="homes-h">
@@ -186,24 +263,42 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
     <p>Price guides on request. Ring or email and I'll send the details.</p>
     <ul class="cards">
       <li class="card-l">
-        <figure><img src="web/list-1.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern white home under a clear blue sky, stock photo"><span class="tag">Sample</span></figure>
-        <h3>Bronte</h3>
-        <p class="facts">Light, white and easy to live in. 4 bed, 3 bath, 2 car.</p>
+        <figure><img src="web/list-1.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern white home under a clear blue sky, stock photo"><span class="l-status">For sale</span><span class="tag">Sample</span>
+          <figcaption class="l-over"><h3>Bronte</h3><p class="l-when">Auction Sat 14 Nov</p><p class="l-spec">4 BED · 3 BATH · 2 CAR</p></figcaption>
+        </figure>
+        <p class="facts">Light, white and easy to live in.</p>
         <a href="mailto:alex@example.com?subject=Bronte%20home">Ask about this home</a>
       </li>
       <li class="card-l">
-        <figure><img src="web/list-2.jpg" width="1000" height="667" loading="lazy" decoding="async" alt="Black-clad modern home beside a traditional house, stock photo"><span class="tag">Sample</span></figure>
-        <h3>Clovelly</h3>
-        <p class="facts">A sharp, low-maintenance home with a private courtyard. 3 bed, 2 bath, 1 car.</p>
+        <figure><img src="web/list-2.jpg" width="1000" height="667" loading="lazy" decoding="async" alt="Black-clad modern home beside a traditional house, stock photo"><span class="l-status">Under offer</span><span class="tag">Sample</span>
+          <figcaption class="l-over"><h3>Clovelly</h3><p class="l-when">Price guide on request</p><p class="l-spec">3 BED · 2 BATH · 1 CAR</p></figcaption>
+        </figure>
+        <p class="facts">A sharp, low-maintenance home with a private courtyard.</p>
         <a href="mailto:alex@example.com?subject=Clovelly%20home">Ask about this home</a>
       </li>
       <li class="card-l">
-        <figure><img src="web/list-3.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern home with a wide lawn out the front, stock photo"><span class="tag">Sample</span></figure>
-        <h3>Waverley</h3>
-        <p class="facts">A wide frontage and a proper lawn for the kids. 4 bed, 2 bath, 2 car.</p>
+        <figure><img src="web/list-3.jpg" width="1100" height="733" loading="lazy" decoding="async" alt="Modern home with a wide lawn out the front, stock photo"><span class="l-status">Sold</span><span class="tag">Sample</span>
+          <figcaption class="l-over"><h3>Waverley</h3><p class="l-when">Price withheld</p><p class="l-spec">4 BED · 2 BATH · 2 CAR</p></figcaption>
+        </figure>
+        <p class="facts">A wide frontage and a proper lawn for the kids.</p>
         <a href="mailto:alex@example.com?subject=Waverley%20home">Ask about this home</a>
       </li>
     </ul>
+  </section>
+
+  <section class="sec" id="area" aria-labelledby="area-h">
+    <p class="eyebrow">Sample homes on the map</p>
+    <h2 id="area-h">Where these homes are.</h2>
+    <p>Pins sit on the suburb, not the street. Tap a pin to see the home.</p>
+    <div class="map-box">
+      <div id="map" aria-label="Map of the three sample homes in Bronte, Clovelly and Waverley"></div>
+      <div class="map-card" aria-live="polite">
+        <p class="eyebrow" id="map-st">Sample · For sale</p>
+        <h3 id="map-h">Bronte, NSW 2024</h3>
+        <p id="map-p">Auction Sat 14 Nov. Street withheld on sample listings.</p>
+        <a id="map-a" href="https://www.google.com/maps/search/?api=1&amp;query=Bronte%20NSW%202024" target="_blank" rel="noopener">Open in Google Maps</a>
+      </div>
+    </div>
   </section>
 
   <section class="scene" aria-label="Walkthrough: down the hallway to the bedroom">
@@ -235,6 +330,18 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
       <button class="btn" type="submit">Get my free appraisal</button>
       <p class="note">Concept demo: nothing is sent.</p>
     </form>
+  </section>
+
+  <section class="sec" id="suburbs" aria-labelledby="suburbs-h">
+    <p class="eyebrow">Suburbs I sell in</p>
+    <h2 id="suburbs-h">Four suburbs, all a short drive apart.</h2>
+    <ul class="xrow">
+      <li class="xrow-item is-open"><button class="xrow-btn" type="button" aria-expanded="true"><img src="web/list-1.jpg" alt="" loading="lazy" decoding="async"><span class="xrow-name">Bronte</span><span class="xrow-txt">Beach, park and the coastal walk. Family homes and semis.</span></button></li>
+      <li class="xrow-item"><button class="xrow-btn" type="button" aria-expanded="false"><img src="web/list-2.jpg" alt="" loading="lazy" decoding="async"><span class="xrow-name">Clovelly</span><span class="xrow-txt">A sheltered bay and quiet streets of semis.</span></button></li>
+      <li class="xrow-item"><button class="xrow-btn" type="button" aria-expanded="false"><img src="web/list-3.jpg" alt="" loading="lazy" decoding="async"><span class="xrow-name">Waverley</span><span class="xrow-txt">Wider blocks, a short run to Bondi Junction.</span></button></li>
+      <li class="xrow-item"><button class="xrow-btn" type="button" aria-expanded="false"><img src="web/house.jpg" alt="" loading="lazy" decoding="async"><span class="xrow-name">Coogee</span><span class="xrow-txt">Beach, cafes and flats with a view of the water.</span></button></li>
+    </ul>
+    <p class="xrow-note">Sample copy and stock photos.</p>
   </section>
 
   <section class="scene" aria-label="Walkthrough: the backyard pergola at golden hour">
@@ -349,5 +456,171 @@ h1{font:400 40px/44px var(--serif);letter-spacing:-.01em;margin-bottom:14px;max-
   update();
 })();
 </script>
+<script>
+// Suburbs row: hover, focus or tap opens a panel, the rest shrink
+(function(){
+  var items = [].slice.call(document.querySelectorAll('.xrow-item'));
+  var wide = window.matchMedia('(min-width:900px) and (hover:hover)');
+  function open(it){
+    items.forEach(function(x){
+      var on = x === it;
+      x.classList.toggle('is-open', on);
+      x.querySelector('.xrow-btn').setAttribute('aria-expanded', on ? 'true' : 'false');
+    });
+  }
+  items.forEach(function(it){
+    var b = it.querySelector('.xrow-btn');
+    b.addEventListener('click', function(){ open(it); });
+    b.addEventListener('focus', function(){ open(it); });
+    it.addEventListener('mouseenter', function(){ if (wide.matches) open(it); });
+  });
+})();
+</script>
+
+<script id="leaflet-js" src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" defer></script>
+<script>
+// Map of the sample homes. Built only when the section comes near the screen.
+(function(){
+  var box = document.getElementById('map');
+  if (!box) return;
+  var homes = {
+    Bronte:   {st: 'For sale',    pc: '2024', line: 'Auction Sat 14 Nov.'},
+    Clovelly: {st: 'Under offer', pc: '2031', line: 'Price guide on request.'},
+    Waverley: {st: 'Sold',        pc: '2024', line: 'Price withheld.'}
+  };
+  var built = false;
+  function build(){
+    if (built) return; built = true;
+    var map = L.map(box, {scrollWheelZoom: false, dragging: !L.Browser.mobile, zoomControl: false, attributionControl: true});
+    L.control.zoom({position: 'topright'}).addTo(map);
+    // OpenStreetMap tiles: free, no key, attribution required. CARTO's free tiles now need a key (checked 19 Oct 2026).
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    function icon(){ return L.divIcon({className: '', html: '<div class="map-pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9]}); }
+    var pins = [
+      L.marker([-33.9038, 151.2648], {icon: icon(), title: 'Bronte, sample home', keyboard: true}).addTo(map),
+      L.marker([-33.9128, 151.2602], {icon: icon(), title: 'Clovelly, sample home', keyboard: true}).addTo(map),
+      L.marker([-33.8996, 151.2512], {icon: icon(), title: 'Waverley, sample home', keyboard: true}).addTo(map)
+    ];
+    var names = ['Bronte', 'Clovelly', 'Waverley'];
+    function show(k, quiet){
+      pins.forEach(function(m, j){ var el = m.getElement(); if (el) el.firstChild.classList.toggle('on', j === k); });
+      if (quiet) return;
+      var n = names[k], h = homes[n];
+      document.getElementById('map-st').textContent = 'Sample · ' + h.st;
+      document.getElementById('map-h').textContent = n + ', NSW ' + h.pc;
+      document.getElementById('map-p').textContent = h.line + ' Street withheld on sample listings.';
+      document.getElementById('map-a').href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(n + ' NSW ' + h.pc);
+    }
+    pins.forEach(function(m, k){ m.on('click', function(){ show(k); }); });
+    // Keep every pin clear of the card: below it on a phone, beside it on a wide screen
+    var card = box.parentNode.querySelector('.map-card'), bounds = L.featureGroup(pins).getBounds();
+    function fit(){
+      var wideMap = box.offsetWidth >= 700;
+      map.fitBounds(bounds, {
+        paddingTopLeft: wideMap ? [card.offsetWidth + 60, 40] : [30, card.offsetHeight + 40],
+        paddingBottomRight: [40, 40], maxZoom: 15
+      });
+    }
+    fit();
+    map.on('resize', fit);
+    show(0, true);
+  }
+  function watch(){
+    if (!('IntersectionObserver' in window)) return build();
+    var io = new IntersectionObserver(function(es){ if (es[0].isIntersecting){ io.disconnect(); build(); } }, {rootMargin: '600px 0px'});
+    io.observe(box);
+  }
+  // Leaflet is deferred: wait for its own load event, it runs after this block
+  if (window.L) watch(); else document.getElementById('leaflet-js').addEventListener('load', watch);
+})();
+</script>
+
+<script type="module">
+// Dotted globe beside the stats. Turns slowly, pauses off screen, still frame for reduced motion.
+import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe@0.6.5/+esm';
+var canvas = document.getElementById('globe');
+if (canvas){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Sydney faces the viewer at the start
+  var phi = Math.PI - (151.21 * Math.PI / 180 - Math.PI / 2), w = 0, last = 0;
+  function size(){ w = canvas.offsetWidth; }
+  size();
+  window.addEventListener('resize', size);
+  var globe = createGlobe(canvas, {
+    devicePixelRatio: 2, width: w * 2, height: w * 2,
+    phi: phi, theta: 0.28, dark: 0, diffuse: 0.9,
+    mapSamples: 12000, mapBrightness: 12,
+    baseColor: [1, 1, 1], markerColor: [0, 0, 0], glowColor: [1, 1, 1],
+    markers: [{location: [-33.87, 151.21], size: 0.08}],
+    onRender: function(st){
+      // Same speed on 60 Hz and 120 Hz screens: about one turn a minute
+      var now = performance.now();
+      if (!reduce && last) phi += Math.min(now - last, 100) * 0.0001;
+      last = now;
+      st.phi = phi; st.width = w * 2; st.height = w * 2;
+    }
+  });
+  canvas.classList.add('on');
+  if (reduce) setTimeout(function(){ globe.toggle(false); }, 200);
+  else if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){ last = 0; globe.toggle(es[0].isIntersecting); }).observe(canvas);
+  }
+}
+</script>
+
+<!-- CHAT-START: scripted demo assistant. Replies are written in the page, nothing is sent anywhere. -->
+<button class="chat-fab" id="chat-open" type="button" aria-expanded="false" aria-controls="chat" aria-label="Open the demo assistant">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+</button>
+<div class="chat-panel" id="chat" role="dialog" aria-label="Alex's assistant, concept demo" hidden>
+  <div class="chat-head">
+    <div><b>Alex's assistant</b><span class="chat-demo-label">Concept demo</span></div>
+    <button class="chat-x" type="button" aria-label="Close the assistant">&times;</button>
+  </div>
+  <div class="chat-log" aria-live="polite"><p class="bot">Hi, I'm Alex's assistant. What can I help with?</p></div>
+  <div class="chat-quick">
+    <button type="button" data-q="appraisal">Book an appraisal</button>
+    <button type="button" data-q="guide">Price guide</button>
+    <button type="button" data-q="inspect">Inspection times</button>
+    <button type="button" data-q="alex">Talk to Alex</button>
+  </div>
+</div>
+<script>
+(function(){
+  var fab = document.getElementById('chat-open'), panel = document.getElementById('chat');
+  var log = panel.querySelector('.chat-log');
+  var replies = {
+    appraisal: 'Happy to help. Fill in the short form under <a href="#sell">Thinking of selling?</a> and Alex rings you back within the hour.',
+    guide: 'Alex sends price guides by text or email, so you get the full details. Ask on <a href="tel:0400000000">0400 000 000</a> or <a href="mailto:alex@example.com?subject=Price%20guide">alex@example.com</a>.',
+    inspect: 'Inspections for these sample homes are by appointment. Tell Alex which home and you get a text with a time.',
+    alex: 'Ring Alex on <a href="tel:0400000000">0400 000 000</a> or email <a href="mailto:alex@example.com">alex@example.com</a>.'
+  };
+  function say(cls, text, html){
+    var p = document.createElement('p'); p.className = cls;
+    if (html) p.innerHTML = html; else p.textContent = text;
+    log.appendChild(p); log.scrollTop = log.scrollHeight;
+  }
+  function setOpen(on){
+    panel.hidden = !on;
+    fab.setAttribute('aria-expanded', on ? 'true' : 'false');
+    fab.setAttribute('aria-label', on ? 'Close the demo assistant' : 'Open the demo assistant');
+    if (on) panel.querySelector('.chat-quick button').focus(); else fab.focus();
+  }
+  fab.addEventListener('click', function(){ setOpen(panel.hidden); });
+  panel.querySelector('.chat-x').addEventListener('click', function(){ setOpen(false); });
+  panel.addEventListener('keydown', function(e){ if (e.key === 'Escape') setOpen(false); });
+  panel.querySelectorAll('[data-q]').forEach(function(b){
+    b.addEventListener('click', function(){
+      say('me', b.textContent);
+      setTimeout(function(){ say('bot', '', replies[b.getAttribute('data-q')]); }, 450);
+    });
+  });
+  log.addEventListener('click', function(e){ if (e.target.closest('a[href="#sell"]')) setOpen(false); });
+})();
+</script>
+<!-- CHAT-END -->
 </body>
 </html>
